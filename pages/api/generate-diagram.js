@@ -14,10 +14,14 @@ export default async function handler(req, res) {
     return;
   }
 
+  let browser;
+
   try {
-    const browser = await puppeteer.launch();
+    browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
-    await page.goto(url);
+    await page.goto(url, { waitUntil: 'networkidle2' });
 
     // Placeholder: Add logic to analyze the page and create the architecture diagram data
     const diagramData = await page.evaluate(() => {
@@ -36,12 +40,14 @@ export default async function handler(req, res) {
       };
     });
 
-    await browser.close();
-
     res.status(200).json(diagramData);
   } catch (error) {
     console.error('Error generating diagram:', error);
-    res.status(500).json({ error: 'Failed to generate architecture diagram' });
+    res.status(500).json({ error: 'Failed to generate architecture diagram', details: error.message });
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 }
 
