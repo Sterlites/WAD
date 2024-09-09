@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,6 +18,7 @@ export default async function handler(req, res) {
 
   try {
     browser = await puppeteer.launch({
+      executablePath: process.env.CHROME_EXECUTABLE_PATH || '/usr/bin/google-chrome',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page = await browser.newPage();
