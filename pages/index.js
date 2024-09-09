@@ -39,6 +39,5 @@ export default function Home() {
 }
 
 const DiagramComponent = ({ data }) => {
-  // Render the diagram using the react-diagrams library or any other library
   return <pre>{JSON.stringify(data, null, 2)}</pre>;
 };

@@ -1,19 +1,55 @@
-import axios from 'axios';
+import puppeteer from 'puppeteer';
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { url } = req.body;
-    try {
-      // Placeholder for actual logic to analyze website and generate architecture diagram data
-      const response = await axios.get(`https://api.example.com/analyze?url=${encodeURIComponent(url)}`);
-      const diagramData = response.data;
-      
-      res.status(200).json(diagramData);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to generate architecture diagram' });
-    }
-  } else {
+  if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
+    return;
+  }
+
+  const { url } = req.body;
+
+  if (!url || !isValidUrl(url)) {
+    res.status(400).json({ error: 'Invalid URL' });
+    return;
+  }
+
+  try {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(url);
+
+    // Placeholder: Add logic to analyze the page and create the architecture diagram data
+    const diagramData = await page.evaluate(() => {
+      // Example: Find all links on the page
+      const links = Array.from(document.querySelectorAll('a')).map(anchor => ({
+        text: anchor.textContent,
+        href: anchor.href
+      }));
+      
+      return {
+        nodes: [
+          { id: '1', label: 'Root' },
+          ...links.map((link, index) => ({ id: `${index + 2}`, label: link.text, url: link.href }))
+        ],
+        edges: links.map((link, index) => ({ from: '1', to: `${index + 2}`, label: 'links to' }))
+      };
+    });
+
+    await browser.close();
+
+    res.status(200).json(diagramData);
+  } catch (error) {
+    console.error('Error generating diagram:', error);
+    res.status(500).json({ error: 'Failed to generate architecture diagram' });
+  }
+}
+
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
   }
 }
