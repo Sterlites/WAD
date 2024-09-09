@@ -1,3 +1,4 @@
+import chromium from 'chrome-aws-lambda';
 import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
@@ -15,12 +16,19 @@ export default async function handler(req, res) {
   }
 
   let browser;
+  let isLocal = process.env.NODE_ENV === 'development';
 
   try {
+    const executablePath = isLocal
+      ? puppeteer.executablePath() // Local environment
+      : await chromium.executablePath; // Vercel environment
+
     browser = await puppeteer.launch({
-      executablePath: process.env.CHROME_EXECUTABLE_PATH || '/usr/bin/google-chrome',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      executablePath,
+      args: chromium.args,
+      headless: chromium.headless
     });
+
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
 
@@ -31,7 +39,7 @@ export default async function handler(req, res) {
         text: anchor.textContent,
         href: anchor.href
       }));
-      
+
       return {
         nodes: [
           { id: '1', label: 'Root' },
